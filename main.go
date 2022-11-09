@@ -1,9 +1,6 @@
 package main
 
 import (
-	// "database/sql"
-	// _ "github.com/denisenkom/go-mssqldb" // It is driver
-	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mssql"
@@ -16,6 +13,7 @@ var password = "zaq12345"
 var database = "astraDB"
 
 type Member struct {
+	gorm.Model
 	ID   uint
 	Name string
 	Age  uint
@@ -34,17 +32,29 @@ func main() {
 	// https://gorm.io/docs/conventions.html#Pluralized-Table-Name
 	db.SingularTable(true)
 
+	db.LogMode(true)
+
+	var name string
+	var id, age uint
+
 	//  --- Create ---
 
-	// member := Member{ID: 1, Name: "Jason Kuan", Age: 30}
-	// result := db.Create(&member)
-	// fmt.Println(result.Value)
+	// db.Exec("INSERT INTO Member (ID, Name, Age) VALUES (?, ?, ?)", 2, "Jason Kuan", 32)
 
 	// --- Read ---
 
-	var member Member
-	// result := db.Find(&member, "Age = ?", 30)
-	result := db.Model(&Member{}).First(&member)
-	fmt.Printf("is not found: %t \n", errors.Is(result.Error, gorm.ErrRecordNotFound))
-	fmt.Println(result.Value)
+	row := db.Raw("SELECT ID, Name, Age FROM Member WHERE ID = ?", 2).Row()
+	row.Scan(&id, &name, &age)
+	fmt.Printf("ID: %d, Name: %s, Age %d \n", id, name, age)
+
+	// --- Update ---
+
+	db.Exec("UPDATE Member SET Age = ? WHERE ID = ?", 40, 2)
+	row = db.Raw("SELECT ID, Name, Age FROM Member WHERE ID = ?", 2).Row()
+	row.Scan(&id, &name, &age)
+	fmt.Printf("ID: %d, Name: %s, Age %d \n", id, name, age)
+
+	// --- Delete ---
+
+	db.Exec("DELETE Member WHERE ID = ?", 2)
 }
